@@ -1,0 +1,165 @@
+@charset "UTF-8";
+
+/* 背景を黒に */
+body {
+    background: #000;
+    /* display: flex; */
+    /* align-items: center; */
+    /* justify-content: center; */
+    /* height: 100vh; */
+    /* margin: 0; */
+}
+
+
+
+#calc_digit {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns:
+        repeat(20,
+            minmax(0, 30fr)
+            /* 数字用セル */
+            minmax(0, 1fr)
+            /* ドット用セル */
+        ) minmax(0, 30fr);
+    /* 最後の数字セル */
+    column-gap: 0;
+    /* セル同士をくっつけたいなら 0 でOK */
+    justify-items: stretch;
+    /* 各セルを幅いっぱいに */
+}
+
+#calc_digit .digit {
+    text-align: center;
+}
+
+#calc_digit .dot {
+    justify-self: center;
+}
+
+/* ネオン風テキスト */
+.neon {
+    /* font-family: 'Audiowide', sans-serif; */
+    /* font-family: 'Neonderthaw', sans-serif; */
+    font-family: 'Monoton', sans-serif;
+    font-size: 3rem;
+    color: #ffa500;
+    /* オレンジ */
+    text-shadow:
+        0 0 5px rgba(255, 165, 0, 0.6),
+        0 0 20px rgba(255, 165, 0, 0.5),
+        0 0 40px rgba(255, 165, 0, 0.4),
+        0 0 80px rgba(255, 165, 0, 0.3);
+    animation:
+        glow-pulse 1.5s ease-in-out infinite alternate,
+        glow-flicker 3s steps(2, end) infinite;
+}
+
+@keyframes glow-pulse {
+    from {
+        text-shadow:
+            0 0 5px rgba(255, 165, 0, 0.6),
+            0 0 20px rgba(255, 165, 0, 0.5),
+            0 0 40px rgba(255, 165, 0, 0.4),
+            0 0 80px rgba(255, 165, 0, 0.3);
+    }
+
+    to {
+        text-shadow:
+            0 0 10px rgba(255, 165, 0, 0.9),
+            0 0 30px rgba(255, 165, 0, 0.7),
+            0 0 60px rgba(255, 165, 0, 0.5),
+            0 0 120px rgba(255, 165, 0, 0.3);
+    }
+}
+
+@keyframes glow-flicker {
+
+    0%,
+    20%,
+    22%,
+    63%,
+    65%,
+    100% {
+        opacity: 1;
+    }
+
+    21%,
+    64% {
+        opacity: 0.8;
+    }
+}
+
+/*
+    キーボード
+*/
+/* 共通設定 */
+.key {
+    --size: 60px;
+    /* キーの大きさ */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--size);
+    height: var(--size);
+    margin: 20px;
+    font-size: 2rem;
+    font-weight: bold;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.1s, transform 0.1s;
+    user-select: none;
+}
+
+/* 白鍵 */
+.white {
+    background: #fff;
+    color: #000;
+    border-top: 6px solid #fff;
+    border-left: 6px solid #fff;
+    border-bottom: 6px solid #888;
+    border-right: 6px solid #888;
+}
+
+.white:active {
+    border-top: 6px solid #888;
+    border-left: 6px solid #888;
+    border-bottom: 6px solid #fff;
+    border-right: 6px solid #fff;
+    transform: translate(2px, 2px);
+}
+
+/* 黒鍵 */
+.black {
+    background: #333;
+    color: #fff;
+    border-top: 6px solid #666;
+    border-left: 6px solid #666;
+    border-bottom: 6px solid #000;
+    border-right: 6px solid #000;
+}
+
+.black:active {
+    border-top: 6px solid #000;
+    border-left: 6px solid #000;
+    border-bottom: 6px solid #666;
+    border-right: 6px solid #666;
+    transform: translate(2px, 2px);
+}
+
+/* スマホ向け（幅768px以下） */
+@media screen and (max-width: 768px) {
+    .neon {
+        font-size: 2rem;
+    }
+}
+
+/* スマホ向け（幅576px以下） */
+@media screen and (max-width: 576px) {
+    .neon {
+        font-size: 1rem;
+    }
+}
