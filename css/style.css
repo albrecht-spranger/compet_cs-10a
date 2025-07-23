@@ -1,8 +1,7 @@
 @charset "UTF-8";
 
-/* 背景を黒に */
 body {
-    background: #000;
+    background: #ece4c4;
     /* display: flex; */
     /* align-items: center; */
     /* justify-content: center; */
@@ -96,16 +95,97 @@ body {
 /*
     キーボード
 */
+.gr_keyboard {
+    display: flex;
+    gap: 60px;
+    margin: 0 auto;
+}
+
+.gr_btn_digit_point {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+#hd_btn_digit {
+    display: flex;
+    gap: 8px;
+}
+
+.gr_btn_nine2one {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#hd_btn_point {
+    display: flex;
+    gap: 18px;
+}
+
 /* 共通設定 */
 .key {
-    --size: 60px;
     /* キーの大きさ */
+    --size: 60px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: var(--size);
     height: var(--size);
-    margin: 20px;
+    margin: 0;
+    font-size: 2rem;
+    font-weight: bold;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.1s, transform 0.1s;
+    user-select: none;
+}
+
+.point_key {
+    --size: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--size);
+    height: var(--size);
+    margin: 0;
+    font-size: 2rem;
+    font-weight: bold;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.1s, transform 0.1s;
+    user-select: none;
+}
+
+.gr_functions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.btn_function {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 180px;
+    height: 60px;
+    margin: 0;
+    font-size: 2rem;
+    font-weight: bold;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.1s, transform 0.1s;
+    user-select: none;
+}
+
+#btn_enter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 180px;
+    height: 124px;
+    margin: 0;
     font-size: 2rem;
     font-weight: bold;
     box-sizing: border-box;
@@ -124,12 +204,13 @@ body {
     border-right: 6px solid #888;
 }
 
-.white:active {
+.white.pushed {
     border-top: 6px solid #888;
     border-left: 6px solid #888;
     border-bottom: 6px solid #fff;
     border-right: 6px solid #fff;
     transform: translate(2px, 2px);
+    color: red;
 }
 
 /* 黒鍵 */
@@ -142,12 +223,13 @@ body {
     border-right: 6px solid #000;
 }
 
-.black:active {
+.black.pushed {
     border-top: 6px solid #000;
     border-left: 6px solid #000;
     border-bottom: 6px solid #666;
     border-right: 6px solid #666;
     transform: translate(2px, 2px);
+    color: red;
 }
 
 /* スマホ向け（幅768px以下） */
