@@ -7,7 +7,7 @@ const calc_register = {
     operand2_dot: 0,       // 次の小数点
     result_digit: 0,
     result_dot: 0,
-    status: ope1    // ope1、ope2、finish、errなど
+    status: 'ope1'    // ope1、ope2、finish、errなど
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -52,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // クリック時の処理もここで登録
                 btn.addEventListener('click', click_digit);
-
                 div.appendChild(btn);
             }
             el_hd_btn_digit.appendChild(div);
@@ -71,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // クリック時の処理もここで登録
             btn.addEventListener('click', click_point);
-
             el_hd_btn_point.appendChild(btn);
         }
     }
@@ -97,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ニクシー管の表示をUpdate
 function update_nixie() {
     // エラー発生時
-    if (calc_register.error) {
+    if (calc_register.status === 'err') {
         const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
         nixie_digit.forEach(el => {
             const idx = Number(el.dataset.index);
@@ -112,22 +110,50 @@ function update_nixie() {
         return;
     }
 
-    // 正常時
+    // 結果表示
+    if (calc_register.status === 'finished') {
+        const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
+        const nixie_dot = document.querySelectorAll('#hd_nixie .dot');
+        let isMinus = false;
+        const result_digit = calc_register.result_digit;
+        if (result_digit < 0) {
+            result_digit = Math.abs(result_digit);
+            isMinus = true;
+        }
+        const s = String(result_digit);
+        const len = s.length;
+        if (len > 20) {
+            calc_register.status = 'err';
+            update_nixie();
+            return;
+        }
+        // 数字を表示、ついでにマイナスも
+        nixie_digit.forEach(elem => {
+            const idx = parseInt(elem.dataset.index, 10);
+            let digit = '';
+            if (idx === 20 && isMinus) {
+                elem.textContent = '－';
+            } else if (idx >= len) {
+                elem.textContent = '';
+            } else {
+                elem.textContent = s[len - 1 - idx];
+            }
+        });
+        // ドットを表示
+        nixie_dot.forEach(el => {
+            const idx = Number(el.dataset.index);
+            if (idx === calc_register.result_dot) {
+                el.textContent = '.';
+            } else {
+                el.textContent = '';
+            }
+        });
+        return;
+    }
+
+    // 通常はボタンを反映
     const result = collectInputNumbers();
-    let pushed_number = 0;
-    for (let i = 0; i < 10; i++) {
-        pushed_number += (10 ** i) * result[i];
-    }
-
     const pushed_point = get_pushed_point();
-    // べき乗を使うと非常に小さい小数でずれるので回数分だけ10で割る
-    for (let i = 0; i < pushed_point; i++) {
-        pushed_number /= 10;
-    }
-
-    console.log(result);
-    console.log(pushed_number);
-
     const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
     const nixie_dot = document.querySelectorAll('#hd_nixie .dot');
 
@@ -157,28 +183,17 @@ function update_nixie() {
 
 // 数字を押された場合のハンドラ
 function click_digit(event) {
-    if (calc_register.error) {
-        // エラー状態ではフリーズ
+    if (calc_register.status === 'err' || calc_register.status === 'finished') {
+        // 演算完了、または、エラー状態では無視
         return;
-    }
-    if (calc_register.result) {
-        // 結果が入っていたら、すべてクリア
-        clear_register();
     }
 
     const btnEl = this;
-
-    // dataset は文字列なので必要なら parseInt() してください
-    const groupNum = parseInt(btnEl.dataset.group, 10);
-    const idxNum = parseInt(btnEl.dataset.index, 10);
-    console.log(`グループ ${groupNum} の 通番 ${idxNum} がクリックされました！`);
-
-    const parent = btnEl.parentElement;
-
     if (btnEl.classList.contains('pushed')) {
         // 押されているなら外す
         btnEl.classList.remove('pushed');
     } else {
+        const parent = btnEl.parentElement;
         // 押されていないなら兄弟から全部外して、自分にだけ付ける
         Array.from(parent.children).forEach(sib => sib.classList.remove('pushed'));
         btnEl.classList.add('pushed');
@@ -186,43 +201,28 @@ function click_digit(event) {
 
     // ニクシー管をUpdate
     update_nixie();
-
-    // 内部レジスタをUpdate
-    update_register();
 }
 
 // 小数点を押された場合のハンドラ
 function click_point(event) {
-    if (calc_register.error) {
-        // エラー状態ではフリーズ
+    if (calc_register.status === 'err' || calc_register.status === 'finished') {
+        // 演算完了、または、エラー状態では無視
         return;
-    }
-    if (calc_register.result) {
-        // 結果が入っていたら、すべてクリア
-        clear_register();
     }
 
     const btnEl = this;
-
-    // dataset は文字列なので必要なら parseInt() してください
-    const idxNum = parseInt(btnEl.dataset.index, 10);
-    console.log(`通番 ${idxNum} の小数点がクリックされました！`);
-
-    const parent = btnEl.parentElement;
-
     if (btnEl.classList.contains('pushed')) {
         // 押されているなら外す
         btnEl.classList.remove('pushed');
     } else {
+        const parent = btnEl.parentElement;
         // 押されていないなら兄弟から全部外して、自分にだけ付ける
         Array.from(parent.children).forEach(sib => sib.classList.remove('pushed'));
         btnEl.classList.add('pushed');
     }
+
     // ニクシー管をUpdate
     update_nixie();
-
-    // 内部レジスタをUpdate
-    update_register();
 }
 
 // 押されている数字を画面から取得
@@ -267,56 +267,25 @@ function get_pushed_point() {
     return parseInt(firstPushed.dataset.index, 10);
 }
 
-// 内部レジスタを更新
-function update_register() {
-    if (calc_register.error || calc_register.result) {
-        return;
-    } else if (calc_register.operator) {
-        calc_register.operand2_digit = get_pushed_number();
-        calc_register.operand2_dot = get_pushed_point();
-    } else {
-        calc_register.operand1_digit = get_pushed_number();
-        calc_register.operand1_dot = get_pushed_point();
-    }
-
-    const el = document.getElementById('calculator_console');
-    if (el) {
-        // ssssss
-    }
-}
-
 // ＋、－、×、÷を押された場合のハンドラ
 function click_opoerator(event) {
-    const btnEl = this;
-    const op = btnEl.dataset.value;
-    const pushed_number = get_pushed_number();
-    const pushed_point = get_pushed_point();
-    const el_calculator_console = document.getElementById('calculator_console');
-
-    if (calc_register.operand2_digit) {
-        // 2つの数字が入力された状態で演算子が押された
-        // 1．計算する
-        // 2．結果をoperand1に入れる
-        // 3．operatorに演算子を入れる
-        // 4．operand2をnullに
-        // 5．入力ボタンをすべて戻す
-    } else if (calc_register.operator) {
-        // 1つ目の数字と演算子が押された状態で、再び、演算子が押された
-        // operatorを上書き
-        calc_register.operator = op;
-    } else if (calc_register.operand1_digit) {
-        // 1つ目の数字が押された状態で演算子が押された
-        // operand1はUpdate済みのはずなので更新しない
-        // operatorを保存
-        calc_register.operator = op;
-        // 入力ボタンをすべて戻す
-    } else {
-        // 1つ目の数字が入力されていない状態で演算子が押された
-        // ⇒1つ目の数字は0とみなす
-        calc_register.operand1_digit = 0;
-        calc_register.operand1_dot = 0;
-        calc_register.operator = op;
+    const sts = calc_register.status;
+    if (sts === 'ope2' || sts === 'finished' || sts === 'err') {
+        // operand1入力以外の状態では無視
+        return;
     }
+
+    // レジスタope1にボタンを取り込み
+    calc_register.operand1_digit = get_pushed_number();
+    calc_register.operand1_dot = get_pushed_point();
+    const btnEl = this;
+    // レジスタoperationに押されたボタンを取り込み
+    calc_register.operator = btnEl.dataset.operator;
+    // ope2入力に遷移
+    calc_register.status = 'ope2';
+
+    // 数字と小数点のボタンをクリア
+    clear_btn_digit_and_point();
     // 電卓のコンソールをUpdate
     // update_calcurator_console();
 
@@ -326,67 +295,40 @@ function click_opoerator(event) {
 
 // ＝を押された場合のハンドラ
 function click_enter(event) {
-    const btnEl = this;
-    const op = btnEl.dataset.value;
+    const sts = calc_register.status;
+    if (sts === 'err' || sts === 'finished') {
+        // 演算終了、または、エラーなら、何もしない
+        return;
+    }
     const pushed_number = get_pushed_number();
     const pushed_point = get_pushed_point();
-    const el_calculator_console = document.getElementById('calculator_console');
-
-    calc_register.error = true;
-
-    if (calc_register.error) {
-        // エラー発生によりフリーズ中の場合
-        console.log('エラーでフリーズ中');
-    } else if (calc_register.result) {
-        // 計算結果が入っている場合
-        console.log('計算済み');
-    } else if (calc_register.operand2_digit) {
-        // 2つ目の数字まで入力されている
-        if (parseInt(calc_register.operand2_digit, 10) === 0 && calc_register.operator == 'divide') {
-            // 2つ目の数字が0、かつ、演算子が÷
-            calc_register.error = true;
-        } else {
-            calculate_now();
-        }
-    } else if (calc_register.operator) {
-        // 1つ目の数字と演算子が押された状態で＝が押された
-        // operand2は0とみなす
-        calc_register.operand2_digit = 0;
-        calc_register.operand2_dot = 0;
-        calculate_now();
-    } else if (calc_register.operand1_digit) {
-        // 1つ目の数字が押された状態で＝が押された
-        // ⇒演算子は＋、2つ目の数字は0とみなす
-        calc_register.operator = 'plus';
-        calc_register.operand2_digit = 0;
-        calc_register.operand2_dot = 0;
+    if (sts === 'ope1') {
+        calc_register.result_digit = pushed_number;
+        calc_register.result_dot = pushed_point;
+        // ニキシー管に表示する
+        clear_btn_digit_and_point();
+        // 電卓のコンソールをUpdate
+        calc_register.status = 'finished';
+    } else if (sts === 'ope2') {
+        calc_register.operand2_digit = pushed_number;
+        calc_register.operand2_dot = pushed_point;
         // 計算する
+        // ニキシー管に表示する
+        clear_btn_digit_and_point();
+        // 電卓のコンソールをUpdate
+        calc_register.status = 'finished';
     } else {
-        // 1つ目の数字が入力されていない状態で演算子が押された
-        // ⇒1つ目、2つ目の数字は0、演算子は＋とみなす
-        calc_register.operand1_digit = 0;
-        calc_register.operand1_dot = 0;
-        calc_register.operator = 'plus';
-        calc_register.operand2_digit = 0;
-        calc_register.operand2_dot = 0;
-        // 計算する
+        // statusに想定外の値が入っていた場合
+        calc_register.status = 'err';
     }
-    // 5．入力ボタンをすべて戻す
-    // 電卓のコンソールをUpdate
-    // update_calcurator_console();
-
-    // ニクシー管をUpdate
-    update_nixie();
 }
 
 // CLRを押された場合のハンドラ
 function click_clear(event) {
-    const btnEl = this;
-    const op = btnEl.dataset.value;
-
     clear_register();
 
-    // 5．入力ボタンをすべて戻す
+    // 入力ボタンをすべて戻す
+    clear_btn_digit_and_point();
     // 電卓のコンソールをUpdate
     // update_calcurator_console();
 
@@ -394,15 +336,37 @@ function click_clear(event) {
     update_nixie();
 }
 
+// 数字と小数点のボタンをすべてクリア
+function clear_btn_digit_and_point() {
+    // 数字ボタンのクリア
+    const el_hd_btn_digit = document.getElementById('hd_btn_digit');
+    if (el_hd_btn_digit) {
+        // #hd_btn_digit 以下の button 要素のうち、.pushed が付いているものをすべて取得
+        const pushedButtons = el_hd_btn_digit.querySelectorAll('button.pushed');
+        // 1つずつ回してクラスを外す
+        pushedButtons.forEach(btn => btn.classList.remove('pushed'));
+    }
+
+    // 小数点ボタンのクリア
+    const el_hd_btn_point = document.getElementById('hd_btn_point');
+    if (el_hd_btn_point) {
+        // #hd_btn_point 以下の button 要素のうち、.pushed が付いているものをすべて取得
+        const pushedButtons = el_hd_btn_point.querySelectorAll('button.pushed');
+        // 1つずつ回してクラスを外す
+        pushedButtons.forEach(btn => btn.classList.remove('pushed'));
+    }
+}
+
 // 内部レジスタをすべてクリア
 function clear_register() {
-    calc_register.operand1_digit = null;
-    calc_register.operand1_dot = null;
+    calc_register.operand1_digit = 0;
+    calc_register.operand1_dot = 0;
     calc_register.operator = null;
-    calc_register.operand2_digit = null;
-    calc_register.operand2_dot = null;
-    calc_register.result = null;
-    calc_register.error = false;
+    calc_register.operand2_digit = 0;
+    calc_register.operand2_dot = 0;
+    calc_register.result_digit = 0;
+    calc_register.result_dot = 0;
+    calc_register.status = 'ope1';
 }
 
 function calculate_now() {
@@ -410,11 +374,15 @@ function calculate_now() {
         // 計算済み、または、エラーフリーズ中は何もしない
         return;
     }
-    const ope1 = parseFloat(calc_register.operand1_digit) * (10 ** (-parseFloat(calc_register.operand1_dot)));
-    const ope2 = parseFloat(calc_register.operand2_digit) * (10 ** (-parseFloat(calc_register.operand2_dot)));
-    let result = 0.0;
+    const ope1 = parseInt(calc_register.operand1_digit, 10);
+    const dot1 = parseInt(calc_register.operand1_dot, 10);
+    const ope2 = parseInt(calc_register.operand2_digit, 10);
+    const dot2 = parseInt(calc_register.operand2_dot, 10);
     switch (calc_register.operator) {
         case 'plus':
+            if (dot1>dot2) {
+                
+            }
             result = ope1 + ope2;
             break;
         case 'minus':
