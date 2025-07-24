@@ -9,63 +9,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Sawarabi+Mincho&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Monoton&family=Neonderthaw&display=swap"
     rel="stylesheet">
 </head>
 
 <body>
   <main>
     <div>
-      <!-- 計算を表示 -->
+      <input type="text" id="calculator_console">
     </div>
-    <!-- 電卓の数字と一部記号画面 -->
-    <div id="calc_operator">
-      <!-- 記号表示 -->
+
+    <!-- ニクシー管 -->
+    <div id="hd_nixie">
     </div>
-    <div id="calc_digit">
-      <!-- 数字表示 -->
-      <span class="digit neon">+</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">1</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">2</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">3</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">4</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">5</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">6</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">7</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">8</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">9</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">0</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">1</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">2</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">3</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">4</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">5</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">6</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">7</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">8</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">9</span>
-      <span class="dot neon">.</span>
-      <span class="digit neon">0</span>
-    </div>
+    <h1 class="compet_logo">COMPET CS-10A style</h1>
     <!-- 電卓キーボード -->
     <div class="gr_keyboard">
       <div class="gr_btn_digit_point">
@@ -73,24 +30,24 @@
         <div id="hd_btn_point"></div>
       </div>
       <div class="gr_functions">
-        <div id="btn_clear" class="btn_function black">
+        <button id="btn_clear" class="black" data-value="clear">
           <p>CLR</p>
-        </div>
-        <div id="btn_div" class="btn_function white">
+        </button>
+        <button id="btn_divide" class="btn_function white" data-value="divide">
           <p>÷</p>
-        </div>
-        <div id="btn_multiple" class="btn_function white">
+        </button>
+        <button id="btn_multiple" class="btn_function white" data-value="clear" data-value="multiple">
           <p>×</p>
-        </div>
-        <div id="btn_minus" class="btn_function white">
+        </button>
+        <button id="btn_minus" class="btn_function white" data-value="minus">
           <p>－</p>
-        </div>
-        <div id="btn_plus" class="btn_function white">
+        </button>
+        <button id="btn_plus" class="btn_function white" data-value="plus">
           <p>＋</p>
-        </div>
-        <div id="btn_enter" class="black">
-          <p>＝</p> 
-        </div>
+        </button>
+        <button id="btn_enter" class="black" data-value="enter">
+          <p>＝</p>
+        </button>
       </div>
     </div>
   </main>
