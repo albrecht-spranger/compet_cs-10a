@@ -1,10 +1,10 @@
 // 電卓の状態をまとめたオブジェクト
 const calc_register = {
-    operand1: 0.0,       // 最初の数
-    operator: null,       // plus、minus、multiple、divideなど
-    operand2: 0.0,       // 次の数
-    result: 0.0,
-    status: 'ope1'    // ope1、ope2、finish、errなど
+    operand1: { value: 0.0, dot: 0},       // 最初の数
+    operator: null,       // plus、subtract、multiply、divideなど
+    operand2: { value: 0.0, dot: 0},       // 次の数
+    result: { value: 0.0, dot: 0},
+    status: 'ope1'    // ope1、ope2、finish、err
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -74,10 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 演算ボタンにハンドラを登録
     const el_btn_divide = document.getElementById('btn_divide');
     el_btn_divide.addEventListener('click', click_opoerator);
-    const el_btn_multiple = document.getElementById('btn_multiple');
-    el_btn_multiple.addEventListener('click', click_opoerator);
-    const el_btn_minus = document.getElementById('btn_minus');
-    el_btn_minus.addEventListener('click', click_opoerator);
+    const el_btn_multiply = document.getElementById('btn_multiply');
+    el_btn_multiply.addEventListener('click', click_opoerator);
+    const el_btn_subtract = document.getElementById('btn_subtract');
+    el_btn_subtract.addEventListener('click', click_opoerator);
     const el_btn_plus = document.getElementById('btn_plus');
     el_btn_plus.addEventListener('click', click_opoerator);
     const el_btn_enter = document.getElementById('btn_enter');
@@ -173,10 +173,10 @@ function update_nixie() {
                 case 'plus':
                     el.textContent = '+';
                     break;
-                case 'minus':
+                case 'subtract':
                     el.textContent = '-';
                     break;
-                case 'multiple':
+                case 'multiply':
                     el.textContent = '×';
                     break;
                 case 'divide':
@@ -301,21 +301,31 @@ function get_pushed_point() {
 // ＋、－、×、÷を押された場合のハンドラ
 function click_opoerator(event) {
     const sts = calc_register.status;
-    if (sts === 'ope2' || sts === 'finished' || sts === 'err') {
-        // operand1入力以外の状態では無視
+    if (sts === 'finished' || sts === 'err') {
         return;
     }
-
-    // レジスタope1にボタンを取り込み
-    calc_register.operand1 = get_pushed_number();
-    // レジスタoperationに押されたボタンを取り込み
-    const btnEl = this;
-    calc_register.operator = btnEl.dataset.operator;
-    // ope2入力に遷移
-    calc_register.status = 'ope2';
-
-    // 数字と小数点のボタンをクリア
-    clear_btn_digit_and_point();
+    if (sts === 'ope2') {
+        // 演算の種類を変える
+        // レジスタoperationに押されたボタンを取り込み
+        const btnEl = this;
+        calc_register.operator = btnEl.dataset.operator;
+    } else if (sts === 'ope1') {
+        // レジスタope1にボタンを取り込み
+        calc_register.operand1.value = get_pushed_digit();
+        calc_register.operand1.dot = get_pushed_point();
+        // レジスタoperationに押されたボタンを取り込み
+        const btnEl = this;
+        calc_register.operator = btnEl.dataset.operator;
+        // ope2入力に遷移
+        calc_register.status = 'ope2';
+        // 数字と小数点のボタンをクリア
+        clear_btn_digit_and_point();
+    } else {
+        // ステータスがおかしい
+        calc_register.status = 'err';
+        // 数字と小数点のボタンをクリア
+        clear_btn_digit_and_point();
+    }
     // 電卓のコンソールをUpdate
     update_calc_console();
     // ニクシー管をUpdate
@@ -329,12 +339,13 @@ function click_enter(event) {
         // 演算終了、または、エラーなら、何もしない
         return;
     }
-    const pushed_number = get_pushed_number();
     if (sts === 'ope1') {
-        calc_register.result = pushed_number;
+        calc_register.result.value = get_pushed_digit();
+        calc_register.result.dot = get_pushed_point();
         calc_register.status = 'finished';
     } else if (sts === 'ope2') {
-        calc_register.operand2 = pushed_number;
+        calc_register.operand2.value = get_pushed_digit();
+        calc_register.operand2.dot = get_pushed_point();
         // 計算する
         const sts = calculate_now();
         calc_register.status = sts;
@@ -385,31 +396,45 @@ function clear_btn_digit_and_point() {
 
 // 内部レジスタをすべてクリア
 function reset_register() {
-    calc_register.operand1 = 0.0;
+    calc_register.operand1.value = 0.0;
+    calc_register.operand1.dot = 0;
     calc_register.operator = null;
-    calc_register.operand2 = 0.0;
-    calc_register.result = 0.0;
+    calc_register.operand2.value = 0.0;
+    calc_register.operand2.dot = 0;
+    calc_register.result.value = 0.0;
+    calc_register.result.dot = 0;
     calc_register.status = 'ope1';
 }
 
+// calc_registerの値を使って演算
+// statusがope2の場合しかコールされない
 function calculate_now() {
-    if (calc_register.status === 'err' || calc_register.status === 'finished') {
-        // 計算済み、または、エラーフリーズ中は何もしない
-        return;
-    }
-    const ope1 = parseFloat(calc_register.operand1);
-    const ope2 = parseFloat(calc_register.operand2);
-    let result = 0.0;
-    let sts = 'finished'
+    if (calc_register.status !== 'ope2') return;
+
+    let sts = 'finished';
+    let aligned_numbers;
     switch (calc_register.operator) {
         case 'plus':
-            result = ope1 + ope2;
+            aligned_numbers = align(calc_register.operand1, calc_register.operand2);
+            calc_register.result = normalize({
+                value: aligned_numbers.aInt + aligned_numbers.bInt,
+                dot: aligned_numbers.scale
+            });
             break;
-        case 'minus':
-            result = ope1 - ope2;
+        case 'subtract':
+            aligned_numbers = align(calc_register.operand1, calc_register.operand2);
+            calc_register.result = normalize({
+                value: aligned_numbers.aInt - aligned_numbers.bInt,
+                dot: aligned_numbers.scale
+            });
             break;
-        case 'multiple':
-            result = ope1 * ope2;
+        case 'multiply':
+            const v = BigInt(calc_register.operand1.value) * BigInt(calc_register.operand2.value);
+            const s = calc_register.operand1.dot + calc_register.operand2.dot;
+            calc_register.result = normalize({
+                value: v,
+                dot: s
+            });
             break;
         case 'divide':
             if (ope2 === 0) {
@@ -424,10 +449,29 @@ function calculate_now() {
             sts = 'err';
             break;
     }
-    calc_register.result = result;
     return sts;
 }
 
+// 結果正規化（末尾ゼロ詰め／整数化）
+function normalize({ value, dot }) {
+  if (value === 0n) return { value: 0n, dot: 0 };
+  // 小数部に余計なゼロがあれば詰める
+  while (dot > 0 && value % 10n === 0n) {
+    value /= 10n;
+    dot--;
+  }
+  return { value: value, dot: dot };
+}
+
+// 加減算のための桁数揃え
+function align(a, b) {
+  const maxDot = Math.max(a.dot, b.dot);
+  const aInt = BigInt(a.value) * 10n ** BigInt(maxDot - a.dot);
+  const bInt = BigInt(b.value) * 10n ** BigInt(maxDot - b.dot);
+  return { aInt, bInt, scale: maxDot };
+}
+
+// 電卓コンソールへのレジスタ表示
 function update_calc_console() {
     const el_calc_console = document.getElementById('calc_console');
     if (!el_calc_console) return;
