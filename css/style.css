@@ -14,9 +14,10 @@ main {
     border-bottom: 8px solid #cac4aa;
     border-right: 8px solid #cac4aa;
     border-radius: 4px;
+    margin-top: 8px;
 }
 
-#calculator_console {
+#calc_console {
     background-color: white;
     border: 1px solid rgb(209, 208, 148);
     width: 100%;

@@ -1,12 +1,9 @@
 // 電卓の状態をまとめたオブジェクト
 const calc_register = {
-    operand1_digit: 0,       // 最初の数
-    operand1_dot: 0,       // 最初の小数点
+    operand1: 0.0,       // 最初の数
     operator: null,       // plus、minus、multiple、divideなど
-    operand2_digit: 0,       // 次の数
-    operand2_dot: 0,       // 次の小数点
-    result_digit: 0,
-    result_dot: 0,
+    operand2: 0.0,       // 次の数
+    result: 0.0,
     status: 'ope1'    // ope1、ope2、finish、errなど
 };
 
@@ -90,13 +87,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ニクシー管をUpdate
     update_nixie();
+
+    update_calc_console();
 });
 
 // ニクシー管の表示をUpdate
 function update_nixie() {
+    const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
+    const nixie_dot = document.querySelectorAll('#hd_nixie .dot');
+
     // エラー発生時
     if (calc_register.status === 'err') {
-        const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
         nixie_digit.forEach(el => {
             const idx = Number(el.dataset.index);
             if (idx === 0 || idx === 1) {
@@ -112,27 +113,33 @@ function update_nixie() {
 
     // 結果表示
     if (calc_register.status === 'finished') {
-        const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
-        const nixie_dot = document.querySelectorAll('#hd_nixie .dot');
         let isMinus = false;
-        const result_digit = calc_register.result_digit;
+        let result_digit = parseFloat(calc_register.result);
         if (result_digit < 0) {
             result_digit = Math.abs(result_digit);
             isMinus = true;
         }
-        const s = String(result_digit);
-        const len = s.length;
-        if (len > 20) {
-            calc_register.status = 'err';
-            update_nixie();
-            return;
+
+        let s = result_digit.toFixed(20);
+        s = s.replace(/\.?0+$/, '');
+        // let s = result_digit.toString();
+        const [intPart, fracPart = ""] = s.split(".");
+        // 小数部の文字の長さが小数点の位置。なければ、0
+        let rounded_frac_part = "";
+        if (fracPart.length > 0) {
+            let frac_float = parseFloat('0.' + fracPart);
+            rounded_frac_part = frac_float.toFixed(20 - intPart.length);
+            // 先頭の数字および小数点を削る
+            rounded_frac_part = rounded_frac_part.replace(/^\d+\./, "");
         }
+        const result_dot = rounded_frac_part.length;
+        s = intPart + rounded_frac_part;
+        const len = s.length;
         // 数字を表示、ついでにマイナスも
         nixie_digit.forEach(elem => {
             const idx = parseInt(elem.dataset.index, 10);
-            let digit = '';
             if (idx === 20 && isMinus) {
-                elem.textContent = '－';
+                elem.textContent = '-';
             } else if (idx >= len) {
                 elem.textContent = '';
             } else {
@@ -142,7 +149,7 @@ function update_nixie() {
         // ドットを表示
         nixie_dot.forEach(el => {
             const idx = Number(el.dataset.index);
-            if (idx === calc_register.result_dot) {
+            if (idx === result_dot) {
                 el.textContent = '.';
             } else {
                 el.textContent = '';
@@ -151,18 +158,35 @@ function update_nixie() {
         return;
     }
 
-    // 通常はボタンを反映
+    // 通常はキーボードを反映
     const result = collectInputNumbers();
     const pushed_point = get_pushed_point();
-    const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
-    const nixie_dot = document.querySelectorAll('#hd_nixie .dot');
 
     // 数字のUpdate
     nixie_digit.forEach(el => {
         // 記号と上位10桁は入力されないのでクリア
         // dataset.index は文字列なので数値に変換
         const idx = Number(el.dataset.index);
-        if (idx >= 10 && idx <= 20) {
+        // operand2入力モードの場合、operationをニキシー管の先頭に表示
+        if (idx === 20 && calc_register.status === 'ope2') {
+            switch (calc_register.operator) {
+                case 'plus':
+                    el.textContent = '+';
+                    break;
+                case 'minus':
+                    el.textContent = '-';
+                    break;
+                case 'multiple':
+                    el.textContent = '×';
+                    break;
+                case 'divide':
+                    el.textContent = '÷';
+                    break;
+                default:
+                    el.textContent = '?';
+                    break;
+            }
+        } else if (idx >= 10 && idx <= 20) {
             // テキストをクリア
             el.textContent = '';
         } else if (idx >= 0 && idx < 10) {
@@ -225,14 +249,21 @@ function click_point(event) {
     update_nixie();
 }
 
-// 押されている数字を画面から取得
-function get_pushed_number() {
+// 押されている数字を取得、整数で返す
+function get_pushed_digit() {
     const result = collectInputNumbers();
     let pushed_number = 0;
     for (let i = 0; i < 10; i++) {
         pushed_number += (10 ** i) * result[i];
     }
     return pushed_number;
+}
+
+// 押されている数字＋小数点を取得、floatで返す。
+function get_pushed_number() {
+    const digit = get_pushed_digit();
+    const dot = get_pushed_point();
+    return parseFloat(digit) * (10.0 ** (-dot));
 }
 
 // 押されている数字を配列で返す
@@ -276,10 +307,9 @@ function click_opoerator(event) {
     }
 
     // レジスタope1にボタンを取り込み
-    calc_register.operand1_digit = get_pushed_number();
-    calc_register.operand1_dot = get_pushed_point();
-    const btnEl = this;
+    calc_register.operand1 = get_pushed_number();
     // レジスタoperationに押されたボタンを取り込み
+    const btnEl = this;
     calc_register.operator = btnEl.dataset.operator;
     // ope2入力に遷移
     calc_register.status = 'ope2';
@@ -287,8 +317,7 @@ function click_opoerator(event) {
     // 数字と小数点のボタンをクリア
     clear_btn_digit_and_point();
     // 電卓のコンソールをUpdate
-    // update_calcurator_console();
-
+    update_calc_console();
     // ニクシー管をUpdate
     update_nixie();
 }
@@ -301,37 +330,34 @@ function click_enter(event) {
         return;
     }
     const pushed_number = get_pushed_number();
-    const pushed_point = get_pushed_point();
     if (sts === 'ope1') {
-        calc_register.result_digit = pushed_number;
-        calc_register.result_dot = pushed_point;
-        // ニキシー管に表示する
-        clear_btn_digit_and_point();
-        // 電卓のコンソールをUpdate
+        calc_register.result = pushed_number;
         calc_register.status = 'finished';
     } else if (sts === 'ope2') {
-        calc_register.operand2_digit = pushed_number;
-        calc_register.operand2_dot = pushed_point;
+        calc_register.operand2 = pushed_number;
         // 計算する
-        // ニキシー管に表示する
-        clear_btn_digit_and_point();
-        // 電卓のコンソールをUpdate
-        calc_register.status = 'finished';
+        const sts = calculate_now();
+        calc_register.status = sts;
     } else {
         // statusに想定外の値が入っていた場合
         calc_register.status = 'err';
     }
+    // ニキシー管に表示する
+    update_nixie();
+    // ボタンをすべて戻す
+    clear_btn_digit_and_point();
+    // 電卓のコンソールをUpdate
+    update_calc_console();
 }
 
 // CLRを押された場合のハンドラ
 function click_clear(event) {
-    clear_register();
-
+    // 電卓レジスタをすべてクリア
+    reset_register();
     // 入力ボタンをすべて戻す
     clear_btn_digit_and_point();
     // 電卓のコンソールをUpdate
-    // update_calcurator_console();
-
+    update_calc_console();
     // ニクシー管をUpdate
     update_nixie();
 }
@@ -358,31 +384,25 @@ function clear_btn_digit_and_point() {
 }
 
 // 内部レジスタをすべてクリア
-function clear_register() {
-    calc_register.operand1_digit = 0;
-    calc_register.operand1_dot = 0;
+function reset_register() {
+    calc_register.operand1 = 0.0;
     calc_register.operator = null;
-    calc_register.operand2_digit = 0;
-    calc_register.operand2_dot = 0;
-    calc_register.result_digit = 0;
-    calc_register.result_dot = 0;
+    calc_register.operand2 = 0.0;
+    calc_register.result = 0.0;
     calc_register.status = 'ope1';
 }
 
 function calculate_now() {
-    if (calc_register.error || calc_register.result) {
+    if (calc_register.status === 'err' || calc_register.status === 'finished') {
         // 計算済み、または、エラーフリーズ中は何もしない
         return;
     }
-    const ope1 = parseInt(calc_register.operand1_digit, 10);
-    const dot1 = parseInt(calc_register.operand1_dot, 10);
-    const ope2 = parseInt(calc_register.operand2_digit, 10);
-    const dot2 = parseInt(calc_register.operand2_dot, 10);
+    const ope1 = parseFloat(calc_register.operand1);
+    const ope2 = parseFloat(calc_register.operand2);
+    let result = 0.0;
+    let sts = 'finished'
     switch (calc_register.operator) {
         case 'plus':
-            if (dot1>dot2) {
-                
-            }
             result = ope1 + ope2;
             break;
         case 'minus':
@@ -393,7 +413,7 @@ function calculate_now() {
             break;
         case 'divide':
             if (ope2 === 0) {
-                calc_register.error = true;
+                sts = 'err';
                 console.log('0で割ろうとした@calculate_now()');
             } else {
                 result = ope1 / ope2;
@@ -401,8 +421,15 @@ function calculate_now() {
             break;
         default:
             console.log('演算子に想定外の何かが入っている (' + calc_register.operator + ')@calculate_now()');
-            calc_register.error = true;
+            sts = 'err';
             break;
     }
     calc_register.result = result;
+    return sts;
+}
+
+function update_calc_console() {
+    const el_calc_console = document.getElementById('calc_console');
+    if (!el_calc_console) return;
+    el_calc_console.value = `(${calc_register.status}) ${calc_register.operand1} ${calc_register.operator} ${calc_register.operand2} = ${calc_register.result}`;
 }
