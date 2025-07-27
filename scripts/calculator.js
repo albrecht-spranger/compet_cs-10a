@@ -1,9 +1,9 @@
 // 電卓の状態をまとめたオブジェクト
 const calc_register = {
-    operand1: { value: 0.0, dot: 0},       // 最初の数
+    operand1: { value: 0n, dot: 0 },       // 最初の数
     operator: null,       // plus、subtract、multiply、divideなど
-    operand2: { value: 0.0, dot: 0},       // 次の数
-    result: { value: 0.0, dot: 0},
+    operand2: { value: 0n, dot: 0 },       // 次の数
+    result: { value: 0n, dot: 0 },
     status: 'ope1'    // ope1、ope2、finish、err
 };
 
@@ -113,35 +113,39 @@ function update_nixie() {
 
     // 結果表示
     if (calc_register.status === 'finished') {
+        // 負の数のチェック
         let isMinus = false;
-        let result_digit = parseFloat(calc_register.result);
-        if (result_digit < 0) {
-            result_digit = Math.abs(result_digit);
+        let result_digit = calc_register.result.value;
+        let result_dot = calc_register.result.dot;
+        if (result_digit < 0n) {
+            result_digit = -result_digit;
             isMinus = true;
         }
 
-        let s = result_digit.toFixed(20);
-        s = s.replace(/\.?0+$/, '');
-        // let s = result_digit.toString();
-        const [intPart, fracPart = ""] = s.split(".");
-        // 小数部の文字の長さが小数点の位置。なければ、0
-        let rounded_frac_part = "";
-        if (fracPart.length > 0) {
-            let frac_float = parseFloat('0.' + fracPart);
-            rounded_frac_part = frac_float.toFixed(20 - intPart.length);
-            // 先頭の数字および小数点を削る
-            rounded_frac_part = rounded_frac_part.replace(/^\d+\./, "");
+        // 小数で0が足りなければ頭に付け、20桁に丸める。
+        let s = result_digit.toString();
+        let len = s.length;
+        if (len <= result_dot) {
+            s = s.padStart(result_dot + 1, '0');
+            len = s.length;
         }
-        const result_dot = rounded_frac_part.length;
-        s = intPart + rounded_frac_part;
-        const len = s.length;
+        // 20桁を超えていたら、20桁で切り捨て
+        if (len > 20) {
+            result_dot -= (len - 20);
+            s = s.slice(0, 20);
+            len = s.length;
+        }
+
         // 数字を表示、ついでにマイナスも
         nixie_digit.forEach(elem => {
             const idx = parseInt(elem.dataset.index, 10);
-            if (idx === 20 && isMinus) {
-                elem.textContent = '-';
-            } else if (idx >= len) {
-                elem.textContent = '';
+            if (idx === 20) {
+                // 記号部
+                if (isMinus) {
+                    elem.textContent = '-';
+                } else {
+                    elem.textContent = '';
+                }
             } else {
                 elem.textContent = s[len - 1 - idx];
             }
@@ -259,13 +263,6 @@ function get_pushed_digit() {
     return pushed_number;
 }
 
-// 押されている数字＋小数点を取得、floatで返す。
-function get_pushed_number() {
-    const digit = get_pushed_digit();
-    const dot = get_pushed_point();
-    return parseFloat(digit) * (10.0 ** (-dot));
-}
-
 // 押されている数字を配列で返す
 function collectInputNumbers() {
     // グループ数分＋安全マージンで初期化（0：未押下を表す）
@@ -291,7 +288,6 @@ function get_pushed_point() {
     const container = document.getElementById('hd_btn_point');
     // ボタン全体から pushed が付いている最初の1つを取得
     const firstPushed = container.querySelector('button.pushed');
-    console.log(firstPushed);  // HTMLButtonElement または null
     if (!firstPushed) {
         return 0;
     }
@@ -396,12 +392,12 @@ function clear_btn_digit_and_point() {
 
 // 内部レジスタをすべてクリア
 function reset_register() {
-    calc_register.operand1.value = 0.0;
+    calc_register.operand1.value = 0n;
     calc_register.operand1.dot = 0;
     calc_register.operator = null;
-    calc_register.operand2.value = 0.0;
+    calc_register.operand2.value = 0n;
     calc_register.operand2.dot = 0;
-    calc_register.result.value = 0.0;
+    calc_register.result.value = 0n;
     calc_register.result.dot = 0;
     calc_register.status = 'ope1';
 }
@@ -437,12 +433,13 @@ function calculate_now() {
             });
             break;
         case 'divide':
-            if (ope2 === 0) {
-                sts = 'err';
-                console.log('0で割ろうとした@calculate_now()');
-            } else {
-                result = ope1 / ope2;
-            }
+            let aInt = normalize(calc_register.operand1);
+            let bInt = normalize(calc_register.operand2);
+            calc_register.result = normalize({
+                value: (aInt.value * (10n ** 21n)) / bInt.value,
+                dot: 21 - bInt.dot
+                // dot: fact - 1 - bInt.dot
+            });
             break;
         default:
             console.log('演算子に想定外の何かが入っている (' + calc_register.operator + ')@calculate_now()');
@@ -452,28 +449,29 @@ function calculate_now() {
     return sts;
 }
 
-// 結果正規化（末尾ゼロ詰め／整数化）
+// 正規化（末尾ゼロ詰め／整数化）
 function normalize({ value, dot }) {
-  if (value === 0n) return { value: 0n, dot: 0 };
-  // 小数部に余計なゼロがあれば詰める
-  while (dot > 0 && value % 10n === 0n) {
-    value /= 10n;
-    dot--;
-  }
-  return { value: value, dot: dot };
+    let v = typeof value === "bigint" ? value : BigInt(value);
+    if (v === 0n) return { value: 0n, dot: 0 };
+
+    while (dot > 0 && v % 10n === 0n) {
+        v /= 10n;
+        dot--;
+    }
+    return { value: v, dot };
 }
 
 // 加減算のための桁数揃え
 function align(a, b) {
-  const maxDot = Math.max(a.dot, b.dot);
-  const aInt = BigInt(a.value) * 10n ** BigInt(maxDot - a.dot);
-  const bInt = BigInt(b.value) * 10n ** BigInt(maxDot - b.dot);
-  return { aInt, bInt, scale: maxDot };
+    const maxDot = Math.max(a.dot, b.dot);
+    const aInt = BigInt(a.value) * 10n ** BigInt(maxDot - a.dot);
+    const bInt = BigInt(b.value) * 10n ** BigInt(maxDot - b.dot);
+    return { aInt, bInt, scale: maxDot };
 }
 
 // 電卓コンソールへのレジスタ表示
 function update_calc_console() {
     const el_calc_console = document.getElementById('calc_console');
     if (!el_calc_console) return;
-    el_calc_console.value = `(${calc_register.status}) ${calc_register.operand1} ${calc_register.operator} ${calc_register.operand2} = ${calc_register.result}`;
+    el_calc_console.value = `(${calc_register.status}) ${calc_register.operand1.value}:${calc_register.operand1.dot} ${calc_register.operator} ${calc_register.operand2.value}:${calc_register.operand2.dot} = ${calc_register.result.value}:${calc_register.result.dot}`;
 }
