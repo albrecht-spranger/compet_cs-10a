@@ -130,7 +130,7 @@ main {
 .tooltip .tooltip-content {
   visibility: hidden;
   opacity: 0;
-  width: 300px;                      /* お好みで調整 */
+  width: 320px;                      /* お好みで調整 */
   background: rgba(0, 0, 0, 0.9);   /* 半透明の黒背景 */
   color: #fff;
   text-align: left;
