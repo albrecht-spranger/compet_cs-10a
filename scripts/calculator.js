@@ -7,6 +7,9 @@ const calc_register = {
     status: 'ope1'    // ope1、ope2、finish、err
 };
 
+let nixie_digit;
+let nixie_dot;
+
 document.addEventListener('DOMContentLoaded', () => {
     // ニクシー管の表示
     const el_hd_nixie = document.getElementById('hd_nixie');
@@ -28,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+    nixie_digit = document.querySelectorAll('#hd_nixie .digit');
+    nixie_dot = document.querySelectorAll('#hd_nixie .dot');
 
     // 数字入力ボタンを表示
     const el_hd_btn_digit = document.getElementById('hd_btn_digit');
@@ -93,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ニクシー管の表示をUpdate
 function update_nixie() {
-    const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
-    const nixie_dot = document.querySelectorAll('#hd_nixie .dot');
+    // const nixie_digit = document.querySelectorAll('#hd_nixie .digit');
+    // const nixie_dot = document.querySelectorAll('#hd_nixie .dot');
 
     // エラー発生時
     if (calc_register.status === 'err') {
@@ -113,52 +118,7 @@ function update_nixie() {
 
     // 結果表示
     if (calc_register.status === 'finished') {
-        // 負の数のチェック
-        let isMinus = false;
-        let result_digit = calc_register.result.value;
-        let result_dot = calc_register.result.dot;
-        if (result_digit < 0n) {
-            result_digit = -result_digit;
-            isMinus = true;
-        }
-
-        // 小数で0が足りなければ頭に付け、20桁に丸める。
-        let s = result_digit.toString();
-        let len = s.length;
-        if (len <= result_dot) {
-            s = s.padStart(result_dot + 1, '0');
-            len = s.length;
-        }
-        // 20桁を超えていたら、20桁で切り捨て
-        if (len > 20) {
-            result_dot -= (len - 20);
-            s = s.slice(0, 20);
-            len = s.length;
-        }
-
-        // 数字を表示、ついでにマイナスも
-        nixie_digit.forEach(elem => {
-            const idx = parseInt(elem.dataset.index, 10);
-            if (idx === 20) {
-                // 記号部
-                if (isMinus) {
-                    elem.textContent = '-';
-                } else {
-                    elem.textContent = '';
-                }
-            } else {
-                elem.textContent = s[len - 1 - idx];
-            }
-        });
-        // ドットを表示
-        nixie_dot.forEach(el => {
-            const idx = Number(el.dataset.index);
-            if (idx === result_dot) {
-                el.textContent = '.';
-            } else {
-                el.textContent = '';
-            }
-        });
+        update_nixie_finished();
         return;
     }
 
@@ -202,6 +162,95 @@ function update_nixie() {
     nixie_dot.forEach(el => {
         const idx = Number(el.dataset.index);
         if (idx === pushed_point) {
+            el.textContent = '.';
+        } else {
+            el.textContent = '';
+        }
+    });
+}
+
+// 計算結果をニクシー管に表示
+function update_nixie_finished() {
+    // 負の数のチェック
+    let isMinus = false;
+    let result_digit = calc_register.result.value;
+    let result_dot = calc_register.result.dot;
+    if (result_digit < 0n) {
+        result_digit = -result_digit;
+        isMinus = true;
+    }
+
+    let s = result_digit.toString();
+    let len = s.length;
+    if (len <= result_dot) {
+        // 答えが1未満のため、0パディングが必要な場合
+        // パディングする0の数(1の位の0を含む)
+        const num_padding = result_dot - len + 1;
+        // 削りたい桁数
+        const deleting_digit = len + num_padding - 20;
+        let result_digit_rounded = result_digit;
+        if (deleting_digit > 0) {
+            // num_digit 桁だけ「右に小数点を動かす」には
+            // 10n の num_digit 乗で割る。
+            const factor = 10n ** BigInt(deleting_digit);
+            const half = factor / 2n;
+            result_digit_rounded = (result_digit_rounded + half) / factor;
+            result_dot -= deleting_digit;
+            ({
+                value: result_digit_rounded,
+                dot: result_dot
+            } = normalize({
+                value: result_digit_rounded,
+                dot: result_dot
+            }));
+        }
+        s = result_digit_rounded.toString();
+        s = s.padStart(result_dot + 1, '0');
+    } else {
+        // 答えが1以上の場合
+        const deleting_digit = len - 20;
+        let result_digit_rounded = result_digit;
+        if (deleting_digit > 0) {
+            const factor = 10n ** BigInt(deleting_digit);
+            const half = factor / 2n;
+            result_digit_rounded = (result_digit_rounded + half) / factor;
+            result_dot -= deleting_digit;
+            ({
+                value: result_digit_rounded,
+                dot: result_dot
+            } = normalize({
+                value: result_digit_rounded,
+                dot: result_dot
+            }));
+        }
+        s = result_digit_rounded.toString();
+    }
+    // 20桁を超えていたら、20桁で切り捨て
+    len = s.length;
+    if (len > 20) {
+        result_dot -= (len - 20);
+        s = s.slice(0, 20);
+        len = s.length;
+    }
+
+    // 数字を表示、ついでにマイナスも
+    nixie_digit.forEach(elem => {
+        const idx = parseInt(elem.dataset.index, 10);
+        if (idx === 20) {
+            // 記号部
+            if (isMinus) {
+                elem.textContent = '-';
+            } else {
+                elem.textContent = '';
+            }
+        } else {
+            elem.textContent = s[len - 1 - idx];
+        }
+    });
+    // ドットを表示
+    nixie_dot.forEach(el => {
+        const idx = Number(el.dataset.index);
+        if (idx === result_dot) {
             el.textContent = '.';
         } else {
             el.textContent = '';

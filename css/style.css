@@ -110,11 +110,61 @@ main {
 .compet_logo {
     /* font-family: 'Neonderthaw', sans-serif; */
     font-family: 'Audiowide', sans-serif;
-    text-align: center;
+    /* text-align: center; */
     font-size: 1.4rem;
     color: brown;
-    margin-top: 2px;
-    margin-bottom: 2px;
+    /* margin-top: 2px; */
+    /* margin-bottom: 2px; */
+}
+
+/* 説明のツールチップ */
+/* CSS */
+.tooltip {
+  position: relative;
+  display: block; /* 好きな要素に置き換えOK */
+  width: fit-content;
+  margin: 2px auto 2px auto;
+}
+
+/* 初期状態：非表示 */
+.tooltip .tooltip-content {
+  visibility: hidden;
+  opacity: 0;
+  width: 300px;                      /* お好みで調整 */
+  background: rgba(0, 0, 0, 0.9);   /* 半透明の黒背景 */
+  color: #fff;
+  text-align: left;
+  border-radius: 4px;
+  padding: 8px;
+  position: absolute;
+  top: 100%;                      /* 親要素の上に出す */
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  transition: opacity 0.2s ease-in-out;
+  z-index: 1000;
+}
+
+/* 画像をツールチップ内で縮小 */
+.tooltip .tooltip-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 6px;
+  border-radius: 2px;
+}
+
+/* ホバー時に表示 */
+.tooltip:hover .tooltip-content,
+.tooltip:focus-within .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip_link {
+    font-size: 0.8rem;
+    color: gold;
+    text-align: right;
 }
 
 /*
