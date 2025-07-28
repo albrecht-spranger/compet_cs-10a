@@ -15,18 +15,11 @@
 
 <body>
   <main>
-    <div>
+    <!-- コンソール＋Aboutボタン＋ツールチップ -->
+    <div class="console_container">
       <input type="text" id="calc_console">
-    </div>
-
-    <!-- ニクシー管 -->
-    <div id="hd_nixie">
-    </div>
-
-    <!-- ロゴ＋ツールチップ -->
-    <div class="tooltip">
-      <h1 class="compet_logo">SHARP COMPET CS-10A style</h1>
-      <div class="tooltip-content">
+      <button id="btn_about">About</button>
+      <div id="tooltip_content">
         <img src="https://museum.ipsj.or.jp/heritage/imges/CS-10A.jpg" alt="IPSJコンピュータ博物館よりCS-10Aの写真" />
         <p>　コンペットCS-10Aは、東京オリンピックが開催された1964年（昭和39年）、早川電機工業（現・シャープ）によって製造・発売された、世界初のオールトランジスタ・ダイオード式電子卓上計算機である。<br>
           　数字入力はフルキー方式の10桁、表示はニキシー管による20桁表示を採用。内部には、ゲルマニウムトランジスタ530個とダイオード2,300個が使用されている。</p>
@@ -34,6 +27,12 @@
             target="_blank">(IPSJコンピュータ博物館より)</a>
       </div>
     </div>
+
+    <!-- ニクシー管 -->
+    <div id="hd_nixie"></div>
+
+    <!-- ロゴ -->
+    <h1 class="compet_logo">SHARP COMPET CS-10A style</h1>
 
     <!-- 電卓キーボード -->
     <div class="gr_keyboard">

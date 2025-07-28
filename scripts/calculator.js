@@ -94,6 +94,12 @@ document.addEventListener('DOMContentLoaded', () => {
     update_nixie();
 
     update_calc_console();
+
+    // Aboutボタンにハンドラを登録
+    const el_btn_about = document.getElementById('btn_about');
+    if (el_btn_about) {
+        el_btn_about.addEventListener('click', click_about);
+    }
 });
 
 // ニクシー管の表示をUpdate
@@ -523,4 +529,14 @@ function update_calc_console() {
     const el_calc_console = document.getElementById('calc_console');
     if (!el_calc_console) return;
     el_calc_console.value = `(${calc_register.status}) ${calc_register.operand1.value}:${calc_register.operand1.dot} ${calc_register.operator} ${calc_register.operand2.value}:${calc_register.operand2.dot} = ${calc_register.result.value}:${calc_register.result.dot}`;
+}
+
+// Aboutボタンを押された時のハンドラ
+function click_about(event) {
+    event.currentTarget.classList.toggle('pushed');
+    const el_tooltip_content = document.getElementById('tooltip_content');
+    if (el_tooltip_content) {
+        const current = el_tooltip_content.style.visibility;
+        el_tooltip_content.style.visibility = (current === 'visible') ? 'hidden' : 'visible';
+    }
 }

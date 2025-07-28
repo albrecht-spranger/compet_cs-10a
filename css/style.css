@@ -7,7 +7,7 @@ body {
 main {
     background: #ece4c4;
     width: 660px;
-    padding: 14px;
+    padding: 10px;
     margin: 0 auto;
     border-top: 8px solid white;
     border-left: 8px solid white;
@@ -17,12 +17,84 @@ main {
     margin-top: 8px;
 }
 
+.console_container {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    /* ツールチップをposition: absolute;にするため、その親要素にrelativeを設定 */
+    position: relative;
+}
+
 #calc_console {
     background-color: white;
     border: 1px solid rgb(209, 208, 148);
     width: 100%;
-    margin-bottom: 8px;
     padding: 1px;
+}
+
+#btn_about {
+    width: fit-content;
+    color: white;
+    font-family: 'Audiowide', sans-serif;
+    font-weight: 500;
+    padding-left: 4px;
+    padding-right: 4px;
+    background-color: #a20000;
+    border-top: 4px solid #bc0000;
+    border-left: 4px solid #bc0000;
+    border-bottom: 4px solid #4c0000;
+    border-right: 4px solid #4c0000;
+}
+
+#btn_about.pushed {
+    border-top: 4px solid #4c0000;
+    border-left: 4px solid #4c0000;
+    border-bottom: 4px solid #bc0000;
+    border-right: 4px solid #bc0000;
+}
+
+/* 説明のツールチップ */
+.tooltip {
+    position: relative;
+    display: block;
+    /* 好きな要素に置き換えOK */
+    width: fit-content;
+    margin: 2px auto 2px auto;
+}
+
+/* 初期状態：非表示 */
+#tooltip_content {
+    visibility: hidden;
+    /* opacity: 0; */
+    width: 320px;
+    background: rgba(0, 0, 0, 0.9);
+    /* 半透明の黒背景 */
+    color: #fff;
+    text-align: left;
+    border-radius: 4px;
+    padding: 8px;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    /* transform: translateX(-50%) translateY(-8px); */
+    transition: opacity 0.2s ease-in-out;
+    z-index: 1000;
+}
+
+/* 画像をツールチップ内で縮小 */
+#tooltip_content img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 6px;
+    border-radius: 3px;
+}
+
+.tooltip_link {
+    font-size: 0.8rem;
+    color: gold;
+    text-align: right;
 }
 
 #hd_nixie {
@@ -110,61 +182,11 @@ main {
 .compet_logo {
     /* font-family: 'Neonderthaw', sans-serif; */
     font-family: 'Audiowide', sans-serif;
-    /* text-align: center; */
+    text-align: center;
     font-size: 1.4rem;
     color: brown;
-    /* margin-top: 2px; */
-    /* margin-bottom: 2px; */
-}
-
-/* 説明のツールチップ */
-/* CSS */
-.tooltip {
-  position: relative;
-  display: block; /* 好きな要素に置き換えOK */
-  width: fit-content;
-  margin: 2px auto 2px auto;
-}
-
-/* 初期状態：非表示 */
-.tooltip .tooltip-content {
-  visibility: hidden;
-  opacity: 0;
-  width: 320px;                      /* お好みで調整 */
-  background: rgba(0, 0, 0, 0.9);   /* 半透明の黒背景 */
-  color: #fff;
-  text-align: left;
-  border-radius: 4px;
-  padding: 8px;
-  position: absolute;
-  top: 100%;                      /* 親要素の上に出す */
-  left: 50%;
-  transform: translateX(-50%) translateY(-8px);
-  transition: opacity 0.2s ease-in-out;
-  z-index: 1000;
-}
-
-/* 画像をツールチップ内で縮小 */
-.tooltip .tooltip-content img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  margin-bottom: 6px;
-  border-radius: 2px;
-}
-
-/* ホバー時に表示 */
-.tooltip:hover .tooltip-content,
-.tooltip:focus-within .tooltip-content {
-  visibility: visible;
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.tooltip_link {
-    font-size: 0.8rem;
-    color: gold;
-    text-align: right;
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
 /*
