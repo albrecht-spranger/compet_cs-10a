@@ -486,7 +486,7 @@ function calculate_now() {
             let bInt = normalize(calc_register.operand2);
             calc_register.result = normalize({
                 value: (aInt.value * (10n ** 21n)) / bInt.value,
-                dot: 21 - bInt.dot
+                dot: 21 + aInt.dot - bInt.dot
                 // dot: fact - 1 - bInt.dot
             });
             break;
