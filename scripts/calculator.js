@@ -9,6 +9,7 @@ const calc_register = {
 
 let nixie_digit;
 let nixie_dot;
+let el_btn_about;
 
 document.addEventListener('DOMContentLoaded', () => {
     // ニクシー管の表示
@@ -96,10 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
     update_calc_console();
 
     // Aboutボタンにハンドラを登録
-    const el_btn_about = document.getElementById('btn_about');
+    el_btn_about = document.getElementById('btn_about');
     if (el_btn_about) {
         el_btn_about.addEventListener('click', click_about);
     }
+    // ウィンドウ全体にハンドラを登録
+    document.addEventListener('click', click_document);
 });
 
 // ニクシー管の表示をUpdate
@@ -533,10 +536,23 @@ function update_calc_console() {
 
 // Aboutボタンを押された時のハンドラ
 function click_about(event) {
+    event.stopPropagation(); // クリックがdocumentまで伝わらないようにする
     event.currentTarget.classList.toggle('pushed');
     const el_tooltip_content = document.getElementById('tooltip_content');
     if (el_tooltip_content) {
         const current = el_tooltip_content.style.visibility;
         el_tooltip_content.style.visibility = (current === 'visible') ? 'hidden' : 'visible';
+    }
+}
+
+function click_document(event) {
+    const el_tooltip_content = document.getElementById('tooltip_content'); // 説明ウィンドウ
+
+    if (!el_tooltip_content || !el_btn_about) return;
+
+    // 押された場所がボタンでもウィンドウでもない
+    if (!el_tooltip_content.contains(event.target) && !el_btn_about.contains(event.target)) {
+        el_tooltip_content.style.visibility = 'hidden';
+        el_btn_about.classList.remove('pushed');
     }
 }
